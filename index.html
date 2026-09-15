@@ -39,19 +39,24 @@
   /* Safe area for iOS notch/home indicator */
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-      :root {
-        --primary: #6200ea;
-        --primary-dark: #4a00b0;
-        --primary-light: #ede7f6;
-        --text: #212121;
-        --muted: #757575;
-        --border: #e0e0e0;
-        --danger: #d32f2f;
-        --success: #2e7d32;
-        --warning: #f57c00;
-        --bg: #f5f5f5;
-        --card: #ffffff;
-      }
+     :root {
+  --primary: #6200ea;
+  --primary-dark: #4a00b0;
+  --primary-light: #ede7f6;
+  --text: #212121;
+  --muted: #757575;
+  --border: #e0e0e0;
+  --danger: #d32f2f;
+  --success: #2e7d32;
+  --warning: #f57c00;
+  --bg: #f5f5f5;
+  --card: #ffffff;
+  /* Safe area variables for mobile */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
 
       /* ============ LOADING OVERLAY ============ */
       .loading-overlay {
@@ -164,20 +169,18 @@
       }
 
       /* ============ TOP APP BAR ============ */
-      .appbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 56px;
-        background: var(--primary);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        padding: 0 8px;
-        z-index: 100;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      }
+.appbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 56px;
+  background: var(--primary);
+  color: #fff;
+  display: flex; align-items: center;
+  padding: 0 8px;
+  padding-top: env(safe-area-inset-top, 0px);
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0,0,0,.2);
+}
+      
       .appbar .menu-btn {
         background: transparent;
         border: none;
@@ -315,14 +318,15 @@
 
       /* ============ MAIN CONTENT ============ */
       .main {
-        position: absolute;
-        top: 56px;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-      }
+  position: fixed;
+  top: 56px; left: 0; right: 0; bottom: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Account for iOS home indicator + Android nav bar */
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+  /* Modern viewport height */
+  height: calc(100dvh - 56px);
+}
       .screen {
         display: none;
         padding: 14px;
