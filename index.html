@@ -1,0 +1,3069 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="theme-color" content="#6200ea" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Fusion" />
+    <title>Fusion — Cash Manager</title>
+
+    <!-- PWA Manifest (inline, no external file needed) -->
+    <link rel="manifest" id="pwa-manifest" />
+    <link
+      rel="apple-touch-icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%236200ea' rx='32'/%3E%3Ctext x='96' y='130' font-size='110' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3EF%3C/text%3E%3C/svg%3E"
+    />
+
+    <style>
+      /* ============ RESET & BASE ============ */
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Noto Sans Bengali", sans-serif;
+        background: #f5f5f5;
+        color: #212121;
+        height: 100%;
+        overflow: hidden;
+      }
+      :root {
+        --primary: #6200ea;
+        --primary-dark: #4a00b0;
+        --primary-light: #ede7f6;
+        --text: #212121;
+        --muted: #757575;
+        --border: #e0e0e0;
+        --danger: #d32f2f;
+        --success: #2e7d32;
+        --warning: #f57c00;
+        --bg: #f5f5f5;
+        --card: #ffffff;
+      }
+
+      /* ============ LOADING OVERLAY ============ */
+      .loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: #f5f5f5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.4s;
+      }
+      .loading-overlay.hide {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid var(--primary-light);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 16px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .loading-text {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .loading-error {
+        color: var(--danger);
+        font-size: 13px;
+        margin-top: 12px;
+        max-width: 320px;
+        text-align: center;
+        padding: 0 20px;
+      }
+
+      /* ============ OFFLINE BADGE ============ */
+      .offline-badge {
+        position: fixed;
+        top: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--warning);
+        color: #fff;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        z-index: 300;
+        display: none;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      }
+      .offline-badge.show {
+        display: block;
+      }
+
+      /* ============ NOTIFICATION BANNER ============ */
+      .notif-banner {
+        position: fixed;
+        top: 60px;
+        left: 14px;
+        right: 14px;
+        background: #fff;
+        color: var(--text);
+        padding: 12px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 350;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-left: 4px solid var(--primary);
+        animation: slideDown 0.3s ease-out;
+      }
+      .notif-banner.show {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .notif-banner .notif-icon {
+        font-size: 20px;
+      }
+      .notif-banner .notif-text {
+        flex: 1;
+      }
+      .notif-banner .notif-close {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-size: 18px;
+        cursor: pointer;
+        padding: 4px;
+      }
+      @keyframes slideDown {
+        from {
+          transform: translateY(-20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* ============ TOP APP BAR ============ */
+      .appbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        background: var(--primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        z-index: 100;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      .appbar .menu-btn {
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 24px;
+        padding: 10px 14px;
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      .appbar .menu-btn:active {
+        background: rgba(255, 255, 255, 0.15);
+      }
+      .appbar .title {
+        font-size: 20px;
+        font-weight: 500;
+        margin-left: 4px;
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .appbar .bell-btn {
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 20px;
+        padding: 10px 12px;
+        cursor: pointer;
+        border-radius: 50%;
+        position: relative;
+      }
+      .appbar .bell-btn:active {
+        background: rgba(255, 255, 255, 0.15);
+      }
+      .appbar .bell-btn .badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: #ff1744;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+      }
+      .appbar .bell-btn .badge.hidden {
+        display: none;
+      }
+
+      /* ============ DRAWER ============ */
+      .drawer-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s;
+        z-index: 200;
+      }
+      .drawer-overlay.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .drawer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 78%;
+        max-width: 320px;
+        background: #fff;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease-out;
+        z-index: 201;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+      }
+      .drawer.open {
+        transform: translateX(0);
+      }
+      .drawer-header {
+        background: var(--primary);
+        color: #fff;
+        padding: 24px 20px 20px;
+      }
+      .drawer-header h2 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+      .drawer-header p {
+        margin: 0;
+        font-size: 13px;
+        opacity: 0.85;
+      }
+      .drawer-item {
+        padding: 15px 22px;
+        font-size: 16px;
+        color: var(--text);
+        cursor: pointer;
+        border: none;
+        background: none;
+        text-align: left;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-left: 4px solid transparent;
+      }
+      .drawer-item .ico {
+        font-size: 20px;
+        width: 24px;
+        text-align: center;
+      }
+      .drawer-item:hover {
+        background: #f5f5f5;
+      }
+      .drawer-item.active {
+        background: var(--primary-light);
+        color: var(--primary);
+        border-left-color: var(--primary);
+        font-weight: 600;
+      }
+      .drawer-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 6px 0;
+      }
+
+      /* ============ MAIN CONTENT ============ */
+      .main {
+        position: absolute;
+        top: 56px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .screen {
+        display: none;
+        padding: 14px;
+        padding-bottom: 40px;
+      }
+      .screen.active {
+        display: block;
+      }
+
+      /* ============ COMMON UI ============ */
+      h1.page-title {
+        text-align: center;
+        font-size: 20px;
+        font-weight: 700;
+        margin: 6px 0 16px;
+        color: var(--text);
+      }
+      .field {
+        position: relative;
+        margin-bottom: 14px;
+      }
+      .field input,
+      .field select,
+      .field textarea {
+        width: 100%;
+        padding: 14px 12px 12px;
+        font-size: 16px;
+        font-family: inherit;
+        color: var(--text);
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        outline: none;
+        transition: border-color 0.15s;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+      .field input:focus,
+      .field select:focus,
+      .field textarea:focus {
+        border-color: var(--primary);
+        border-width: 2px;
+        padding: 13px 11px 11px;
+      }
+      .field label {
+        position: absolute;
+        top: 14px;
+        left: 12px;
+        font-size: 16px;
+        color: var(--muted);
+        background: transparent;
+        padding: 0 4px;
+        pointer-events: none;
+        transition: all 0.15s ease-out;
+      }
+      .field input:focus ~ label,
+      .field input:not(:placeholder-shown) ~ label,
+      .field select:focus ~ label,
+      .field select:valid ~ label,
+      .field textarea:focus ~ label,
+      .field textarea:not(:placeholder-shown) ~ label {
+        top: -9px;
+        left: 8px;
+        font-size: 12px;
+        color: var(--primary);
+        background: #fff;
+        font-weight: 500;
+      }
+      .field select {
+        padding-right: 12px;
+        background-image: none;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 20px;
+        font-size: 15px;
+        font-weight: 500;
+        font-family: inherit;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          box-shadow 0.15s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(98, 0, 234, 0.3);
+      }
+      .btn-primary:active {
+        background: var(--primary-dark);
+      }
+      .btn-outline {
+        background: transparent;
+        color: var(--primary);
+        border: 1px solid var(--primary);
+      }
+      .btn-danger {
+        background: transparent;
+        color: var(--danger);
+        border: 1px solid var(--danger);
+      }
+      .btn-block {
+        width: 100%;
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .card {
+        background: var(--card);
+        border-radius: 10px;
+        padding: 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        margin-bottom: 12px;
+      }
+      .divider {
+        height: 1px;
+        background: var(--border);
+        margin: 10px 0;
+      }
+
+      /* ============ HOME SCREEN ============ */
+      .input-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .result-box {
+        text-align: center;
+        padding: 14px;
+        margin: 12px 0;
+        font-size: 18px;
+        font-weight: 700;
+        border: 2px solid var(--border);
+        border-radius: 20px;
+        background: #fff;
+        transition: all 0.2s;
+      }
+      .result-box.due {
+        color: var(--danger);
+        border-color: var(--danger);
+        background: #ffebee;
+      }
+      .result-box.adv {
+        color: var(--success);
+        border-color: var(--success);
+        background: #e8f5e9;
+      }
+      .result-box.ok {
+        color: var(--primary);
+        border-color: var(--primary);
+        background: var(--primary-light);
+      }
+
+      /* ============ DENOTE SCREEN ============ */
+      .denom-total {
+        text-align: center;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--primary);
+        margin: 6px 0 14px;
+        padding: 12px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .denom-total small {
+        display: block;
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--muted);
+      }
+      .denom-table {
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .denom-header,
+      .denom-row {
+        display: grid;
+        grid-template-columns: 90px 1fr 1fr;
+        align-items: center;
+      }
+      .denom-header {
+        background: var(--primary);
+        color: #fff;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 10px 8px;
+        text-align: center;
+      }
+      .denom-row {
+        padding: 8px;
+        border-bottom: 1px solid var(--border);
+      }
+      .denom-row:last-child {
+        border-bottom: none;
+      }
+      .note-card {
+        width: 74px;
+        height: 46px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+        color: #fff;
+        box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4);
+        letter-spacing: 0.5px;
+      }
+      .denom-row input {
+        width: 100%;
+        padding: 8px 6px;
+        font-size: 15px;
+        text-align: center;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        outline: none;
+        font-family: inherit;
+      }
+      .denom-row input:focus {
+        border-color: var(--primary);
+        border-width: 2px;
+        padding: 7px 5px;
+      }
+      .denom-subtotal {
+        text-align: center;
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 15px;
+      }
+
+      /* ============ MENTION SCREEN ============ */
+      .mention-row {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr auto;
+        gap: 8px;
+        margin-bottom: 10px;
+        align-items: center;
+      }
+      .mention-total {
+        text-align: center;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--primary);
+        padding: 12px;
+        margin: 14px 0;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .mention-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .delete-btn {
+        background: transparent;
+        border: 1px solid var(--danger);
+        color: var(--danger);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      .delete-btn:active {
+        background: #ffebee;
+      }
+
+      /* ============ IMAGE ATTACH ============ */
+      .img-attach-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .img-attach-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .img-attach-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .img-attach-actions .btn {
+        padding: 10px 8px;
+        font-size: 13px;
+      }
+      .img-preview-wrap {
+        margin-top: 12px;
+        position: relative;
+        display: none;
+      }
+      .img-preview-wrap.show {
+        display: block;
+      }
+      .img-preview {
+        width: 100%;
+        max-height: 220px;
+        object-fit: contain;
+        border-radius: 8px;
+        background: #f0f0f0;
+        display: block;
+      }
+      .img-remove {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: rgba(0, 0, 0, 0.65);
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .img-hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 6px;
+        text-align: center;
+      }
+
+      /* ============ BANK LIST ============ */
+      .tabs {
+        display: flex;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .tab {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        transition: all 0.15s;
+      }
+      .tab.active {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      .bank-item {
+        padding: 14px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        color: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        background: #ffa500;
+      }
+      .bank-item:nth-child(even) {
+        background: #20b2aa;
+      }
+      .bank-item .bank-name {
+        font-size: 17px;
+        font-weight: 700;
+        margin-bottom: 3px;
+      }
+      .bank-item .bank-branch {
+        font-size: 13px;
+        font-style: italic;
+        opacity: 0.95;
+        margin-bottom: 8px;
+      }
+      .bank-item .bank-detail {
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .bank-item .bank-detail b {
+        font-weight: 600;
+      }
+      .bank-search {
+        width: 100%;
+        padding: 12px;
+        font-size: 15px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        margin-bottom: 12px;
+        outline: none;
+        font-family: inherit;
+      }
+      .bank-search:focus {
+        border-color: var(--primary);
+        border-width: 2px;
+        padding: 11px;
+      }
+
+      /* ============ LOGIN SCREEN ============ */
+      .login-container {
+        max-width: 400px;
+        margin: 40px auto;
+        text-align: center;
+        padding: 0 10px;
+      }
+      .login-icon {
+        font-size: 60px;
+        margin-bottom: 10px;
+      }
+      .login-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 6px;
+      }
+      .login-sub {
+        font-size: 14px;
+        color: var(--muted);
+        margin-bottom: 24px;
+      }
+      .login-error {
+        color: var(--danger);
+        font-size: 13px;
+        margin-top: 10px;
+        min-height: 18px;
+      }
+
+      /* ============ ABOUT ============ */
+      .about-container {
+        text-align: center;
+        padding: 10px 4px;
+      }
+      .about-avatar {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        font-weight: 700;
+        margin: 0 auto 14px;
+        border: 4px solid #ddd;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+      .about-header {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 6px 0 10px;
+      }
+      .about-text {
+        font-size: 14px;
+        line-height: 1.7;
+        color: #555;
+        text-align: justify;
+        padding: 0 6px;
+      }
+      .credit-title {
+        text-align: center;
+        font-size: 16px;
+        font-weight: 700;
+        font-style: italic;
+        margin: 34px 0 16px;
+      }
+      .credit-row {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        flex-wrap: wrap;
+      }
+      .credit-person {
+        text-align: center;
+      }
+      .credit-avatar {
+        width: 92px;
+        height: 92px;
+        border-radius: 50%;
+        background: #ffa500;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        font-weight: 700;
+        margin: 0 auto 8px;
+        border: 2px solid #333;
+      }
+      .credit-person:nth-child(2) .credit-avatar {
+        background: #20b2aa;
+      }
+      .credit-name {
+        font-weight: 700;
+        font-style: italic;
+        font-size: 13px;
+      }
+
+      /* ============ NOTIFICATION LIST ============ */
+      .notif-item {
+        background: #fff;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        border-left: 3px solid var(--primary);
+      }
+      .notif-item.unread {
+        background: var(--primary-light);
+      }
+      .notif-item .notif-ico {
+        font-size: 22px;
+        flex-shrink: 0;
+      }
+      .notif-item .notif-content {
+        flex: 1;
+      }
+      .notif-item .notif-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 3px;
+      }
+      .notif-item .notif-time {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      /* ============ TOAST / MODAL ============ */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(120%);
+        background: #323232;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        z-index: 500;
+        transition: transform 0.3s;
+        max-width: 90%;
+        text-align: center;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 400;
+        padding: 20px;
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 400px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      .modal h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+      .modal p {
+        margin: 0 0 16px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #444;
+        white-space: pre-wrap;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .modal-actions .btn {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+
+      /* ============ UTILITY ============ */
+      .hidden {
+        display: none !important;
+      }
+      .text-center {
+        text-align: center;
+      }
+      .mt-10 {
+        margin-top: 10px;
+      }
+      .mb-10 {
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============ LOADING OVERLAY ============ -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">
+        Loading data from Firebase...
+      </div>
+      <div class="loading-error" id="loadingError"></div>
+    </div>
+
+    <!-- ============ OFFLINE BADGE ============ -->
+    <div class="offline-badge" id="offlineBadge">📴 অফলাইন মোড</div>
+
+    <!-- ============ NOTIFICATION BANNER ============ -->
+    <div class="notif-banner" id="notifBanner">
+      <div class="notif-icon" id="notifBannerIcon">🔔</div>
+      <div class="notif-text" id="notifBannerText">New notification</div>
+      <button class="notif-close" onclick="hideNotifBanner()">✕</button>
+    </div>
+
+    <!-- ============ APP BAR ============ -->
+    <header class="appbar">
+      <button class="menu-btn" onclick="toggleDrawer()" aria-label="Menu">
+        ☰
+      </button>
+      <div class="title" id="appbarTitle">Home</div>
+      <button
+        class="bell-btn"
+        onclick="navigate('notifications')"
+        title="Notifications"
+      >
+        🔔
+        <span class="badge hidden" id="notifBadge">0</span>
+      </button>
+    </header>
+
+    <!-- ============ DRAWER ============ -->
+    <div
+      class="drawer-overlay"
+      id="drawerOverlay"
+      onclick="closeDrawer()"
+    ></div>
+    <nav class="drawer" id="drawer">
+      <div class="drawer-header">
+        <h2>Fusion</h2>
+        <p>Cash Manager</p>
+      </div>
+      <button
+        class="drawer-item active"
+        data-screen="home"
+        onclick="navigate('home')"
+      >
+        <span class="ico">🏠</span> Home
+      </button>
+      <button
+        class="drawer-item"
+        data-screen="denote"
+        onclick="navigate('denote')"
+      >
+        <span class="ico">💵</span> Denote
+      </button>
+      <button
+        class="drawer-item"
+        data-screen="mention"
+        onclick="navigate('mention')"
+      >
+        <span class="ico">📢</span> Mention
+      </button>
+      <button class="drawer-item" data-screen="bank" onclick="navigate('bank')">
+        <span class="ico">🏦</span> Bank List
+      </button>
+      <button
+        class="drawer-item"
+        data-screen="notifications"
+        onclick="navigate('notifications')"
+      >
+        <span class="ico">🔔</span> Notifications
+      </button>
+      <div class="drawer-divider"></div>
+      <button
+        class="drawer-item"
+        data-screen="about"
+        onclick="navigate('about')"
+      >
+        <span class="ico">ℹ️</span> About
+      </button>
+    </nav>
+
+    <!-- ============ MAIN ============ -->
+    <main class="main" id="mainApp">
+      <!-- ===== HOME SCREEN ===== -->
+      <section id="screen-home" class="screen active">
+        <h1 class="page-title">Your Company Ltd.</h1>
+        <div class="field">
+          <input type="date" id="home-date" required />
+          <label for="home-date">Date</label>
+        </div>
+        <div class="field">
+          <select id="home-dso" required>
+            <option value="" disabled selected hidden></option>
+          </select>
+          <label for="home-dso">Select DSO</label>
+        </div>
+        <div class="input-grid" id="home-inputs"></div>
+        <div class="field mt-10">
+          <textarea id="home-note" rows="2" placeholder=" "></textarea>
+          <label for="home-note">Note</label>
+        </div>
+        <div class="result-box ok" id="home-result">😊</div>
+        <button class="btn btn-primary btn-block" onclick="homeSubmit()">
+          📤 &nbsp;SEND
+        </button>
+      </section>
+
+      <!-- ===== DENOTE SCREEN ===== -->
+      <section id="screen-denote" class="screen">
+        <div class="denom-total">
+          <small>TOTAL</small>
+          <span id="denote-total">0</span> ৳
+        </div>
+        <div class="denom-table">
+          <div class="denom-header">
+            <div>Note</div>
+            <div>Quantity</div>
+            <div>Subtotal</div>
+          </div>
+          <div id="denote-rows"></div>
+        </div>
+        <button class="btn btn-outline btn-block mt-10" onclick="denoteReset()">
+          ↺ &nbsp;RESET
+        </button>
+      </section>
+
+      <!-- ===== MENTION SCREEN ===== -->
+      <section id="screen-mention" class="screen">
+        <h1 class="page-title">Send to Multiple DSO</h1>
+        <div id="mention-rows"></div>
+        <div class="mention-actions">
+          <button class="btn btn-primary" onclick="mentionAdd()">
+            ＋ Add DSO
+          </button>
+          <button class="btn btn-outline" onclick="mentionReset()">
+            ↺ Reset All
+          </button>
+        </div>
+        <div class="mention-total">
+          Total: <span id="mention-total">0</span> ৳
+        </div>
+
+        <div class="img-attach-card">
+          <div class="img-attach-title">🖼️ Attach Image (optional)</div>
+          <div class="img-attach-actions">
+            <button
+              class="btn btn-outline"
+              onclick="document.getElementById('mention-img-input').click()"
+            >
+              📁 Choose
+            </button>
+            <button
+              class="btn btn-outline"
+              onclick="document.getElementById('mention-cam-input').click()"
+            >
+              📷 Camera
+            </button>
+          </div>
+          <input
+            type="file"
+            id="mention-img-input"
+            accept="image/*"
+            class="hidden"
+            onchange="mentionImageSelected(event)"
+          />
+          <input
+            type="file"
+            id="mention-cam-input"
+            accept="image/*"
+            capture="environment"
+            class="hidden"
+            onchange="mentionImageSelected(event)"
+          />
+          <div class="img-preview-wrap" id="mention-img-preview-wrap">
+            <img class="img-preview" id="mention-img-preview" alt="preview" />
+            <button
+              class="img-remove"
+              onclick="mentionImageRemove()"
+              title="Remove"
+            >
+              ✕
+            </button>
+          </div>
+          <div class="img-hint">
+            ছবি সংযুক্ত করলে, পাঠানোর আগে শেয়ার শিট থেকে WhatsApp-এ পাঠাতে হবে।
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" onclick="mentionSend()">
+          📤 &nbsp;SEND TO WHATSAPP
+        </button>
+      </section>
+
+      <!-- ===== BANK LIST SCREEN ===== -->
+      <section id="screen-bank" class="screen">
+        <div class="tabs">
+          <button
+            class="tab active"
+            id="tab-nagad"
+            onclick="switchBankTab('nagad')"
+          >
+            নগদ
+          </button>
+          <button class="tab" id="tab-fusion" onclick="switchBankTab('fusion')">
+            ফিউশন
+          </button>
+        </div>
+        <input
+          class="bank-search"
+          id="bank-search"
+          placeholder="🔍  Search bank / branch / account..."
+          oninput="renderBanks()"
+        />
+        <div id="bank-list"></div>
+      </section>
+
+      <!-- ===== NOTIFICATIONS SCREEN ===== -->
+      <section id="screen-notifications" class="screen">
+        <h1 class="page-title">🔔 Notifications</h1>
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+          "
+        >
+          <button class="btn btn-outline" onclick="enablePushNotifications()">
+            🔔 Enable Push
+          </button>
+          <button class="btn btn-outline" onclick="markAllRead()">
+            ✓ Mark All Read
+          </button>
+        </div>
+        <div id="notif-list"></div>
+        <button
+          class="btn btn-danger btn-block mt-10"
+          onclick="clearAllNotifications()"
+        >
+          🗑️ Clear All
+        </button>
+      </section>
+
+      <!-- ===== ABOUT SCREEN ===== -->
+      <section id="screen-about" class="screen">
+        <div class="about-container">
+          <div class="about-avatar">R</div>
+          <div class="about-header">About Developer</div>
+          <p class="about-text">
+            I am <b>Rasel Hossain</b>, a passionate React Developer with
+            experience in building websites, web apps, and mobile apps using
+            React and React Native. Thanks for visiting!
+          </p>
+          <div class="credit-title">Courtesy of</div>
+          <div class="credit-row">
+            <div class="credit-person">
+              <div class="credit-avatar">A</div>
+              <div class="credit-name">Asaduzzaman Asad</div>
+            </div>
+            <div class="credit-person">
+              <div class="credit-avatar">S</div>
+              <div class="credit-name">Sharif Hasan</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============================================================
+     ADMIN APP (separate)
+     ============================================================ -->
+    <div id="adminApp" class="hidden">
+      <header class="appbar" style="background: #4a00b0">
+        <button
+          class="menu-btn"
+          onclick="toggleAdminDrawer()"
+          aria-label="Menu"
+        >
+          ☰
+        </button>
+        <div class="title" id="adminAppbarTitle">Admin — Dashboard</div>
+        <button
+          class="menu-btn"
+          onclick="adminLogout()"
+          title="Logout"
+          style="font-size: 18px"
+        >
+          🔓
+        </button>
+      </header>
+
+      <div
+        class="drawer-overlay"
+        id="adminDrawerOverlay"
+        onclick="closeAdminDrawer()"
+      ></div>
+      <nav class="drawer" id="adminDrawer" style="background: #fafafa">
+        <div class="drawer-header" style="background: #4a00b0">
+          <h2>Admin Panel</h2>
+          <p>Fusion Cash Manager</p>
+        </div>
+        <button
+          class="drawer-item active"
+          data-admin-screen="dashboard"
+          onclick="adminNavigate('dashboard')"
+        >
+          <span class="ico">📊</span> Dashboard
+        </button>
+        <button
+          class="drawer-item"
+          data-admin-screen="dso"
+          onclick="adminNavigate('dso')"
+        >
+          <span class="ico">📱</span> DSO List
+        </button>
+        <button
+          class="drawer-item"
+          data-admin-screen="banks"
+          onclick="adminNavigate('banks')"
+        >
+          <span class="ico">🏦</span> Bank List
+        </button>
+        <button
+          class="drawer-item"
+          data-admin-screen="settings"
+          onclick="adminNavigate('settings')"
+        >
+          <span class="ico">⚙️</span> Settings
+        </button>
+        <div class="drawer-divider"></div>
+        <button class="drawer-item" onclick="adminLogout()">
+          <span class="ico">🚪</span> Logout
+        </button>
+      </nav>
+
+      <main class="main" id="adminMain">
+        <!-- DASHBOARD -->
+        <section id="admin-screen-dashboard" class="screen active">
+          <h1 class="page-title">📊 Dashboard</h1>
+          <div class="card">
+            <p style="margin: 0 0 8px; font-size: 14px; color: #555">
+              স্বাগতম, <b id="admin-email-display">admin</b>!
+            </p>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-top: 10px;
+              "
+            >
+              <div
+                class="card"
+                style="
+                  text-align: center;
+                  margin: 0;
+                  background: var(--primary-light);
+                "
+              >
+                <div
+                  style="
+                    font-size: 28px;
+                    font-weight: 700;
+                    color: var(--primary);
+                  "
+                  id="dash-dso-count"
+                >
+                  0
+                </div>
+                <div style="font-size: 12px; color: var(--muted)">DSO</div>
+              </div>
+              <div
+                class="card"
+                style="text-align: center; margin: 0; background: #e8f5e9"
+              >
+                <div
+                  style="
+                    font-size: 28px;
+                    font-weight: 700;
+                    color: var(--success);
+                  "
+                  id="dash-nagad-count"
+                >
+                  0
+                </div>
+                <div style="font-size: 12px; color: var(--muted)">
+                  নগদ ব্যাংক
+                </div>
+              </div>
+              <div
+                class="card"
+                style="text-align: center; margin: 0; background: #fff3e0"
+              >
+                <div
+                  style="
+                    font-size: 28px;
+                    font-weight: 700;
+                    color: var(--warning);
+                  "
+                  id="dash-fusion-count"
+                >
+                  0
+                </div>
+                <div style="font-size: 12px; color: var(--muted)">
+                  ফিউশন ব্যাংক
+                </div>
+              </div>
+              <div
+                class="card"
+                style="text-align: center; margin: 0; background: #fce4ec"
+              >
+                <div
+                  style="
+                    font-size: 28px;
+                    font-weight: 700;
+                    color: var(--danger);
+                  "
+                  id="dash-status"
+                >
+                  —
+                </div>
+                <div style="font-size: 12px; color: var(--muted)">
+                  Auth Status
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <p
+              style="
+                margin: 0;
+                font-size: 13px;
+                color: var(--muted);
+                line-height: 1.6;
+              "
+            >
+              🔐 Firebase Authentication সক্রিয়। শুধু অনুমোদিত ইমেইল দিয়ে লগইন
+              করা যাবে।
+            </p>
+          </div>
+        </section>
+
+        <!-- DSO MANAGEMENT -->
+        <section id="admin-screen-dso" class="screen">
+          <h1 class="page-title">📱 DSO List</h1>
+          <div class="card">
+            <div class="field" style="margin-bottom: 10px">
+              <input type="text" id="admin-dso-input" placeholder=" " />
+              <label for="admin-dso-input">New DSO Number</label>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="adminAddDso()">
+              ＋ Add DSO
+            </button>
+          </div>
+          <div class="card">
+            <div
+              style="
+                font-size: 14px;
+                font-weight: 700;
+                color: var(--primary);
+                margin-bottom: 10px;
+              "
+            >
+              Current DSOs (<span id="admin-dso-count">0</span>)
+            </div>
+            <div id="admin-dso-list"></div>
+          </div>
+        </section>
+
+        <!-- BANK MANAGEMENT -->
+        <section id="admin-screen-banks" class="screen">
+          <h1 class="page-title">🏦 Bank List</h1>
+          <div class="tabs" style="margin-bottom: 12px">
+            <button
+              class="tab active"
+              id="admin-tab-nagad"
+              onclick="switchAdminBankTab('nagad')"
+            >
+              নগদ
+            </button>
+            <button
+              class="tab"
+              id="admin-tab-fusion"
+              onclick="switchAdminBankTab('fusion')"
+            >
+              ফিউশন
+            </button>
+          </div>
+          <div class="card">
+            <div class="field" style="margin-bottom: 6px">
+              <input type="text" id="admin-bank-name" placeholder=" " />
+              <label for="admin-bank-name">Bank Name</label>
+            </div>
+            <div class="field" style="margin-bottom: 6px">
+              <input type="text" id="admin-bank-branch" placeholder=" " />
+              <label for="admin-bank-branch">Branch Name</label>
+            </div>
+            <div class="field" style="margin-bottom: 6px">
+              <input type="text" id="admin-bank-account" placeholder=" " />
+              <label for="admin-bank-account">Account Number</label>
+            </div>
+            <div class="field" style="margin-bottom: 10px">
+              <input type="text" id="admin-bank-title" placeholder=" " />
+              <label for="admin-bank-title">Accounts Title</label>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="adminAddBank()">
+              ＋ Add Bank
+            </button>
+          </div>
+          <div class="card">
+            <div
+              style="
+                font-size: 14px;
+                font-weight: 700;
+                color: var(--primary);
+                margin-bottom: 10px;
+              "
+            >
+              Current Banks (<span id="admin-bank-count">0</span>)
+            </div>
+            <div id="admin-bank-list"></div>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="admin-screen-settings" class="screen">
+          <h1 class="page-title">⚙️ Settings</h1>
+          <div class="card">
+            <h3
+              style="margin: 0 0 10px; font-size: 16px; color: var(--primary)"
+            >
+              🔐 Account
+            </h3>
+            <p
+              style="
+                font-size: 13px;
+                color: #555;
+                line-height: 1.6;
+                margin: 0 0 10px;
+              "
+            >
+              ইমেইল: <b id="settings-email">—</b>
+            </p>
+            <button
+              class="btn btn-outline btn-block"
+              onclick="adminChangePassword()"
+            >
+              🔑 Change Password
+            </button>
+          </div>
+          <div class="card">
+            <h3
+              style="margin: 0 0 10px; font-size: 16px; color: var(--primary)"
+            >
+              ☁️ Firebase
+            </h3>
+            <p
+              style="font-size: 13px; color: #555; line-height: 1.6; margin: 0"
+            >
+              Project: <b id="settings-project-id">—</b><br />
+              Realtime Database: <b id="settings-db-status">—</b><br />
+              Authentication: <b id="settings-auth-status">—</b>
+            </p>
+            <button
+              class="btn btn-outline btn-block mt-10"
+              onclick="reloadFromFirebase()"
+            >
+              🔄 Reload from Firebase
+            </button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ============ LOGIN SCREEN ============ -->
+    <div
+      id="loginScreen"
+      class="hidden"
+      style="
+        position: fixed;
+        inset: 0;
+        background: #f5f5f5;
+        z-index: 5000;
+        overflow-y: auto;
+      "
+    >
+      <div
+        style="
+          position: sticky;
+          top: 0;
+          height: 56px;
+          background: #4a00b0;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          padding: 0 8px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        "
+      >
+        <button
+          class="menu-btn"
+          onclick="exitAdminLogin()"
+          style="
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            padding: 10px 14px;
+            cursor: pointer;
+            border-radius: 50%;
+          "
+        >
+          ←
+        </button>
+        <div style="font-size: 20px; font-weight: 500; margin-left: 4px">
+          Admin Login
+        </div>
+      </div>
+      <div class="login-container">
+        <div class="login-icon">🔐</div>
+        <div class="login-title">Admin Access</div>
+        <div class="login-sub">শুধু অনুমোদিত ইমেইল দিয়ে প্রবেশ করুন</div>
+
+        <div class="field">
+          <input
+            type="email"
+            id="admin-email"
+            placeholder=" "
+            autocomplete="username"
+          />
+          <label for="admin-email">Email</label>
+        </div>
+        <div class="field">
+          <input
+            type="password"
+            id="admin-password"
+            placeholder=" "
+            autocomplete="current-password"
+          />
+          <label for="admin-password">Password</label>
+        </div>
+        <button
+          class="btn btn-primary btn-block"
+          onclick="adminLogin()"
+          id="loginBtn"
+        >
+          🔓 &nbsp;LOGIN
+        </button>
+        <div class="login-error" id="login-error"></div>
+        <p
+          style="
+            font-size: 12px;
+            color: #999;
+            margin-top: 20px;
+            line-height: 1.5;
+          "
+        >
+          ℹ️ লগইন তথ্য Firebase Console → Authentication → Users থেকে তৈরি করা
+          হয়।
+        </p>
+      </div>
+    </div>
+
+    <!-- ============ MODAL & TOAST ============ -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal">
+        <h3 id="modalTitle">Confirm</h3>
+        <p id="modalBody"></p>
+        <div class="modal-actions" id="modalActions"></div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- ============ FIREBASE SDK ============ -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
+
+    <script>
+      /* ============================================================
+   🔥 FIREBASE CONFIG — আপনার নিজের কনফিগ এখানে বসান
+   ============================================================ */
+      const firebaseConfig = {
+        apiKey: "AIzaSyDPLDaKbNieqkGLn1A7uZaOI97hdFXWxSA",
+        authDomain: "fusion-4e936.firebaseapp.com",
+        databaseURL:
+          "https://fusion-4e936-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "fusion-4e936",
+        storageBucket: "fusion-4e936.firebasestorage.app",
+        messagingSenderId: "1030444791324",
+        appId: "1:1030444791324:web:7cd9f71bab51b9ba7bd1d9",
+        measurementId: "G-S9G1JT986H",
+      };
+
+      /* ============================================================
+   INIT FIREBASE
+   ============================================================ */
+      let fbApp = null,
+        fbDb = null,
+        fbAuth = null;
+      let fbReady = false;
+
+      function initFirebase() {
+        try {
+          if (firebaseConfig.apiKey.startsWith("YOUR_")) {
+            throw new Error("Firebase config not set.");
+          }
+          fbApp = firebase.initializeApp(firebaseConfig);
+          fbDb = firebase.database();
+          fbAuth = firebase.auth();
+          fbReady = true;
+
+          document.getElementById("settings-project-id").textContent =
+            firebaseConfig.projectId || "—";
+          document.getElementById("settings-db-status").textContent =
+            "🟢 Connected";
+          document.getElementById("settings-auth-status").textContent =
+            "🟢 Enabled";
+          document.getElementById("dash-status").textContent = "🟢";
+          document.getElementById("dash-status").style.color = "var(--success)";
+        } catch (e) {
+          console.error("Firebase init error:", e);
+          fbReady = false;
+          document.getElementById("settings-db-status").textContent =
+            "🔴 Not connected";
+          document.getElementById("dash-status").textContent = "🔴";
+          document.getElementById("dash-status").style.color = "var(--danger)";
+          document.getElementById("loadingError").textContent =
+            "⚠️ " + e.message + "\n\nApp will run in offline mode.";
+        }
+      }
+
+      /* ============================================================
+   DATA CACHE
+   ============================================================ */
+      let DSO_LIST = [];
+      let NAGAD_BANKS = [];
+      let FUSION_BANKS = [];
+      let NOTIFICATIONS = [];
+
+      let fbListeners = [];
+
+      /* ============================================================
+   PWA — MANIFEST + SERVICE WORKER (inline, no external files)
+   ============================================================ */
+      /* ============================================================
+   PWA — Data URL Manifest + Inline Service Worker
+   ============================================================ */
+      /* ============================================================
+   PWA — Data URL Manifest + External Service Worker
+   ============================================================ */
+      function setupPWA() {
+        // ---- 1. Manifest via Data URL (start_url সহ) ----
+        const manifest = {
+          name: "Fusion — Cash Manager",
+          short_name: "Fusion",
+          description: "Daily cash management for DSOs and banks",
+          start_url: ".",
+          scope: ".",
+          display: "standalone",
+          background_color: "#f5f5f5",
+          theme_color: "#6200ea",
+          orientation: "portrait",
+          icons: [
+            {
+              src:
+                "data:image/svg+xml," +
+                encodeURIComponent(
+                  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" fill="#6200ea" rx="32"/><text x="96" y="130" font-size="110" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold">F</text></svg>',
+                ),
+              sizes: "192x192",
+              type: "image/svg+xml",
+              purpose: "any maskable",
+            },
+          ],
+        };
+
+        const manifestDataUrl =
+          "data:application/manifest+json;charset=utf-8," +
+          encodeURIComponent(JSON.stringify(manifest));
+
+        document
+          .getElementById("pwa-manifest")
+          .setAttribute("href", manifestDataUrl);
+
+        // ---- 2. Service Worker from external sw.js file ----
+        if ("serviceWorker" in navigator) {
+          // Only register if we are served over http/https (not file://)
+          if (location.protocol === "http:" || location.protocol === "https:") {
+            navigator.serviceWorker
+              .register("sw.js")
+              .then((reg) => {
+                console.log("✅ SW registered, scope:", reg.scope);
+              })
+              .catch((err) => {
+                console.info("ℹ️ Service Worker skipped:", err.message);
+              });
+          } else {
+            console.info(
+              "ℹ️ SW skipped: file:// protocol (host over http to enable)",
+            );
+          }
+        }
+
+        // ---- 3. Online/offline detection ----
+        window.addEventListener("online", updateOnlineStatus);
+        window.addEventListener("offline", updateOnlineStatus);
+        updateOnlineStatus();
+      }
+
+      function updateOnlineStatus() {
+        const badge = document.getElementById("offlineBadge");
+        if (navigator.onLine) badge.classList.remove("show");
+        else badge.classList.add("show");
+      }
+
+      /* ============================================================
+   BROWSER NOTIFICATIONS (permission + display)
+   ============================================================ */
+      function requestNotifPermission() {
+        if (!("Notification" in window)) return Promise.resolve("unsupported");
+        if (Notification.permission === "granted")
+          return Promise.resolve("granted");
+        return Notification.requestPermission();
+      }
+
+      function enablePushNotifications() {
+        requestNotifPermission().then((p) => {
+          if (p === "granted") {
+            showToast("✅ ব্রাউজার নোটিফিকেশন চালু হয়েছে");
+            new Notification("Fusion", {
+              body: "নোটিফিকেশন সফলভাবে চালু হয়েছে!",
+              icon:
+                "data:image/svg+xml," +
+                encodeURIComponent(
+                  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" fill="#6200ea" rx="32"/><text x="96" y="130" font-size="110" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold">F</text></svg>`,
+                ),
+            });
+          } else if (p === "denied") {
+            showToast(
+              "❌ নোটিফিকেশন ব্লক করা হয়েছে (ব্রাউজার সেটিংসে চালু করুন)",
+            );
+          } else {
+            showToast("⚠️ নোটিফিকেশন পারমিশন দেওয়া হয়নি");
+          }
+        });
+      }
+
+      function showBrowserNotification(title, body) {
+        if (!("Notification" in window)) return;
+        if (Notification.permission !== "granted") return;
+        try {
+          new Notification(title, {
+            body,
+            icon:
+              "data:image/svg+xml," +
+              encodeURIComponent(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" fill="#6200ea" rx="32"/><text x="96" y="130" font-size="110" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold">F</text></svg>`,
+              ),
+          });
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+
+      /* ============================================================
+   FIREBASE REALTIME SYNC
+   ============================================================ */
+      function startFirebaseSync() {
+        if (!fbReady) {
+          hideLoading();
+          return;
+        }
+        const base = "fusion";
+
+        const dsoRef = fbDb.ref(base + "/dso");
+        const h1 = dsoRef.on(
+          "value",
+          (snap) => {
+            const val = snap.val() || {};
+            DSO_LIST = Object.keys(val)
+              .map((k) => val[k])
+              .filter(Boolean)
+              .sort();
+            onDataChanged();
+          },
+          (err) => console.warn(err),
+        );
+        fbListeners.push(() => dsoRef.off("value", h1));
+
+        const nagadRef = fbDb.ref(base + "/nagad");
+        const h2 = nagadRef.on(
+          "value",
+          (snap) => {
+            const val = snap.val() || {};
+            NAGAD_BANKS = Object.keys(val).map((k) => ({ _id: k, ...val[k] }));
+            onDataChanged();
+          },
+          (err) => console.warn(err),
+        );
+        fbListeners.push(() => nagadRef.off("value", h2));
+
+        const fusionRef = fbDb.ref(base + "/fusion");
+        const h3 = fusionRef.on(
+          "value",
+          (snap) => {
+            const val = snap.val() || {};
+            FUSION_BANKS = Object.keys(val).map((k) => ({ _id: k, ...val[k] }));
+            onDataChanged();
+          },
+          (err) => console.warn(err),
+        );
+        fbListeners.push(() => fusionRef.off("value", h3));
+
+        // Notifications listener (only new ones since page load)
+        const firstLoadTime = Date.now();
+        const notifRef = fbDb.ref(base + "/notifications").limitToLast(30);
+        const h4 = notifRef.on(
+          "child_added",
+          (snap) => {
+            const n = snap.val();
+            if (!n) return;
+            const ts = n.ts || 0;
+            NOTIFICATIONS.unshift({ _id: snap.key, ...n });
+            // Only alert if created after this page load (not historical)
+            if (ts > firstLoadTime) {
+              showBrowserNotification(n.title || "Fusion", n.body || "");
+              showNotifBanner(n.title || "Fusion", n.body || "");
+            }
+            renderNotifications();
+            updateNotifBadge();
+          },
+          (err) => console.warn(err),
+        );
+        fbListeners.push(() => notifRef.off("child_added", h4));
+      }
+
+      function stopFirebaseSync() {
+        fbListeners.forEach((fn) => {
+          try {
+            fn();
+          } catch (e) {}
+        });
+        fbListeners = [];
+      }
+
+      function onDataChanged() {
+        const dc = document.getElementById("dash-dso-count");
+        if (dc) dc.textContent = DSO_LIST.length;
+        const nc = document.getElementById("dash-nagad-count");
+        if (nc) nc.textContent = NAGAD_BANKS.length;
+        const fc = document.getElementById("dash-fusion-count");
+        if (fc) fc.textContent = FUSION_BANKS.length;
+
+        refreshDsoDropdown();
+        renderMention();
+        renderBanks();
+        renderAdminDsoList();
+        renderAdminBankList();
+      }
+
+      /* Push a notification record to Firebase (called by admin add/remove) */
+      function pushNotification(title, body, type) {
+        if (!fbReady) return;
+        fbDb
+          .ref("fusion/notifications")
+          .push({
+            title,
+            body,
+            type: type || "info",
+            ts: Date.now(),
+          })
+          .catch((err) => console.warn("Notif push failed:", err));
+      }
+
+      /* ============================================================
+   NOTIFICATIONS UI
+   ============================================================ */
+      function showNotifBanner(title, body) {
+        const el = document.getElementById("notifBanner");
+        document.getElementById("notifBannerText").innerHTML =
+          `<b>${escapeHtml(title)}</b><br><span style="font-size:12px;color:#666">${escapeHtml(body)}</span>`;
+        el.classList.add("show");
+        clearTimeout(el._t);
+        el._t = setTimeout(hideNotifBanner, 5000);
+      }
+      function hideNotifBanner() {
+        document.getElementById("notifBanner").classList.remove("show");
+      }
+
+      function renderNotifications() {
+        const wrap = document.getElementById("notif-list");
+        if (!wrap) return;
+        if (!NOTIFICATIONS.length) {
+          wrap.innerHTML = `<p class="text-center" style="color:#757575;padding:20px">কোনো নোটিফিকেশন নেই।</p>`;
+          return;
+        }
+        wrap.innerHTML = NOTIFICATIONS.map(
+          (n) => `
+    <div class="notif-item">
+      <div class="notif-ico">${n.type === "dso" ? "📱" : n.type === "bank" ? "🏦" : "🔔"}</div>
+      <div class="notif-content">
+        <div class="notif-title">${escapeHtml(n.title || "")}</div>
+        <div style="font-size:13px;color:#555;margin-bottom:4px">${escapeHtml(n.body || "")}</div>
+        <div class="notif-time">${formatTime(n.ts)}</div>
+      </div>
+    </div>
+  `,
+        ).join("");
+      }
+
+      function updateNotifBadge() {
+        const badge = document.getElementById("notifBadge");
+        if (!badge) return;
+        const count = NOTIFICATIONS.length;
+        if (count > 0) {
+          badge.textContent = count > 99 ? "99+" : count;
+          badge.classList.remove("hidden");
+        } else {
+          badge.classList.add("hidden");
+        }
+      }
+
+      function markAllRead() {
+        showToast("সব পঠিত হিসেবে চিহ্নিত");
+        renderNotifications();
+      }
+
+      function clearAllNotifications() {
+        showModal({
+          title: "Clear All",
+          body: "সব নোটিফিকেশন মুছে ফেলা হবে?",
+          actions: [
+            { label: "না", onClick: () => {} },
+            {
+              label: "হ্যাঁ",
+              primary: true,
+              onClick: () => {
+                NOTIFICATIONS = [];
+                renderNotifications();
+                updateNotifBadge();
+                showToast("সব নোটিফিকেশন মুছে ফেলা হয়েছে");
+              },
+            },
+          ],
+        });
+      }
+
+      function formatTime(ts) {
+        if (!ts) return "";
+        const d = new Date(ts);
+        const now = new Date();
+        const diff = Math.floor((now - d) / 1000);
+        if (diff < 60) return "এইমাত্র";
+        if (diff < 3600) return Math.floor(diff / 60) + " মিনিট আগে";
+        if (diff < 86400) return Math.floor(diff / 3600) + " ঘন্টা আগে";
+        return (
+          d.toLocaleDateString("bn-BD") +
+          " " +
+          d.toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" })
+        );
+      }
+
+      /* ============================================================
+   ADMIN AUTH — Firebase Email/Password
+   ============================================================ */
+      function showAdminApp() {
+        document.getElementById("mainApp").classList.add("hidden");
+        document.getElementById("adminApp").classList.remove("hidden");
+        document.querySelector("body > .appbar").style.display = "none";
+        document.querySelector("body > .drawer").style.display = "none";
+        document.querySelector("body > .drawer-overlay").style.display = "none";
+        document.querySelector("#adminApp > .appbar").style.display = "flex";
+        document.querySelector("#adminApp > .drawer").style.display = "flex";
+        document.querySelector("#adminApp > .drawer-overlay").style.display =
+          "block";
+        adminNavigate("dashboard");
+      }
+
+      function hideAdminApp() {
+        document.getElementById("adminApp").classList.add("hidden");
+        document.getElementById("mainApp").classList.remove("hidden");
+        document.querySelector("body > .appbar").style.display = "flex";
+        document.querySelector("body > .drawer").style.display = "flex";
+        document.querySelector("body > .drawer-overlay").style.display =
+          "block";
+        document.querySelector("#adminApp > .appbar").style.display = "none";
+        document.querySelector("#adminApp > .drawer").style.display = "none";
+        document.querySelector("#adminApp > .drawer-overlay").style.display =
+          "none";
+      }
+
+      function toggleAdminDrawer() {
+        document.getElementById("adminDrawer").classList.toggle("open");
+        document.getElementById("adminDrawerOverlay").classList.toggle("open");
+      }
+      function closeAdminDrawer() {
+        document.getElementById("adminDrawer").classList.remove("open");
+        document.getElementById("adminDrawerOverlay").classList.remove("open");
+      }
+
+      function adminNavigate(screen) {
+        document
+          .querySelectorAll("#adminApp .screen")
+          .forEach((s) => s.classList.remove("active"));
+        const el = document.getElementById("admin-screen-" + screen);
+        if (el) el.classList.add("active");
+        document
+          .querySelectorAll("#adminApp .drawer-item")
+          .forEach((i) =>
+            i.classList.toggle("active", i.dataset.adminScreen === screen),
+          );
+        const titles = {
+          dashboard: "Admin — Dashboard",
+          dso: "Admin — DSO List",
+          banks: "Admin — Bank List",
+          settings: "Admin — Settings",
+        };
+        document.getElementById("adminAppbarTitle").textContent =
+          titles[screen] || "Admin";
+        document.getElementById("adminMain").scrollTop = 0;
+        closeAdminDrawer();
+        if (screen === "dso") renderAdminDsoList();
+        if (screen === "banks") renderAdminBankList();
+        if (screen === "dashboard") onDataChanged();
+        if (screen === "settings") {
+          document.getElementById("settings-project-id").textContent =
+            firebaseConfig.projectId || "—";
+          document.getElementById("settings-db-status").textContent = fbReady
+            ? "🟢 Connected"
+            : "🔴 Not connected";
+          document.getElementById("settings-auth-status").textContent =
+            fbAuth && fbAuth.currentUser ? "🟢 Logged in" : "🟡 Not logged in";
+          document.getElementById("settings-email").textContent =
+            fbAuth && fbAuth.currentUser ? fbAuth.currentUser.email : "—";
+        }
+      }
+
+      function openAdminLogin() {
+        document.getElementById("loginScreen").classList.remove("hidden");
+        document.getElementById("admin-email").value = "";
+        document.getElementById("admin-password").value = "";
+        document.getElementById("login-error").textContent = "";
+        setTimeout(() => document.getElementById("admin-email").focus(), 100);
+      }
+      function exitAdminLogin() {
+        document.getElementById("loginScreen").classList.add("hidden");
+      }
+
+      function adminLogin() {
+        if (!fbReady) {
+          document.getElementById("login-error").textContent =
+            "Firebase কানেক্টেড নেই";
+          return;
+        }
+        const email = document.getElementById("admin-email").value.trim();
+        const pwd = document.getElementById("admin-password").value;
+        const err = document.getElementById("login-error");
+        const btn = document.getElementById("loginBtn");
+
+        if (!email || !pwd) {
+          err.textContent = "ইমেইল ও পাসওয়ার্ড দিন";
+          return;
+        }
+
+        err.textContent = "";
+        btn.disabled = true;
+        btn.textContent = "⏳ LOGGING IN...";
+
+        fbAuth
+          .signInWithEmailAndPassword(email, pwd)
+          .then((cred) => {
+            exitAdminLogin();
+            showAdminApp();
+            document.getElementById("admin-email-display").textContent =
+              cred.user.email;
+            showToast("স্বাগতম, " + cred.user.email);
+            // Start admin-only writes listener
+            startFirebaseSync();
+          })
+          .catch((e) => {
+            console.error(e);
+            let msg = "❌ লগইন ব্যর্থ";
+            if (
+              e.code === "auth/wrong-password" ||
+              e.code === "auth/invalid-credential"
+            )
+              msg = "❌ ভুল ইমেইল বা পাসওয়ার্ড";
+            else if (e.code === "auth/user-not-found")
+              msg = "❌ এই ইমেইলে কোনো ইউজার নেই";
+            else if (e.code === "auth/too-many-requests")
+              msg = "⚠️ অনেকবার চেষ্টা করেছেন, কিছুক্ষণ পর আবার চেষ্টা করুন";
+            else if (e.code === "auth/invalid-email")
+              msg = "❌ ইমেইল ফরম্যাট সঠিক নয়";
+            err.textContent = msg;
+          })
+          .finally(() => {
+            btn.disabled = false;
+            btn.textContent = "🔓 LOGIN";
+          });
+      }
+
+      function adminLogout() {
+        showModal({
+          title: "Logout",
+          body: "আপনি কি অ্যাডমিন প্যানেল থেকে লগআউট করতে চান?",
+          actions: [
+            { label: "না", onClick: () => {} },
+            {
+              label: "হ্যাঁ",
+              primary: true,
+              onClick: () => {
+                if (fbAuth) fbAuth.signOut().catch(() => {});
+                hideAdminApp();
+                showToast("লগআউট সম্পন্ন");
+              },
+            },
+          ],
+        });
+      }
+
+      function adminChangePassword() {
+        if (!fbAuth || !fbAuth.currentUser) {
+          showToast("লগইন নেই");
+          return;
+        }
+        const user = fbAuth.currentUser;
+
+        showModal({
+          title: "Change Password",
+          body:
+            "নিরাপত্তার জন্য, পাসওয়ার্ড রিসেট লিংক আপনার ইমেইলে পাঠানো হবে: " +
+            user.email,
+          actions: [
+            { label: "বাতিল", onClick: () => {} },
+            {
+              label: "পাঠান",
+              primary: true,
+              onClick: () => {
+                fbAuth
+                  .sendPasswordResetEmail(user.email)
+                  .then(() => showToast("✅ ইমেইলে রিসেট লিংক পাঠানো হয়েছে"))
+                  .catch((e) => showToast("ব্যর্থ: " + e.message));
+              },
+            },
+          ],
+        });
+      }
+
+      /* ============================================================
+   ADMIN DSO OPERATIONS
+   ============================================================ */
+      function adminAddDso() {
+        if (!fbAuth || !fbAuth.currentUser) {
+          showToast("🔒 লগইন করুন");
+          return;
+        }
+        const inp = document.getElementById("admin-dso-input");
+        const val = inp.value.trim();
+        if (!val) {
+          showToast("DSO নম্বর দিন");
+          return;
+        }
+        if (DSO_LIST.includes(val)) {
+          showToast("এই DSO আগে থেকেই আছে");
+          return;
+        }
+
+        if (!fbReady) {
+          DSO_LIST.push(val);
+          DSO_LIST.sort();
+          inp.value = "";
+          onDataChanged();
+          showToast("DSO যোগ হয়েছে (offline)");
+          return;
+        }
+
+        const newRef = fbDb.ref("fusion/dso").push();
+        newRef
+          .set(val)
+          .then(() => {
+            pushNotification("নতুন DSO যোগ", `DSO: ${val}`, "dso");
+            inp.value = "";
+            showToast("DSO যোগ হয়েছে ✓");
+          })
+          .catch((err) => showToast("ব্যর্থ: " + err.message));
+      }
+
+      function adminRemoveDso(idx) {
+        if (!fbAuth || !fbAuth.currentUser) {
+          showToast("🔒 লগইন করুন");
+          return;
+        }
+        const val = DSO_LIST[idx];
+        if (!val) return;
+        if (!fbReady) {
+          DSO_LIST.splice(idx, 1);
+          onDataChanged();
+          showToast("DSO মুছে ফেলা হয়েছে");
+          return;
+        }
+        fbDb
+          .ref("fusion/dso")
+          .once("value")
+          .then((snap) => {
+            const valObj = snap.val() || {};
+            const key = Object.keys(valObj).find((k) => valObj[k] === val);
+            if (!key) {
+              showToast("খুঁজে পাওয়া যায়নি");
+              return;
+            }
+            return fbDb
+              .ref("fusion/dso/" + key)
+              .remove()
+              .then(() => {
+                pushNotification("DSO মুছে ফেলা হয়েছে", `DSO: ${val}`, "dso");
+              });
+          })
+          .then(() => showToast("DSO মুছে ফেলা হয়েছে"))
+          .catch((err) => showToast("ব্যর্থ: " + err.message));
+      }
+
+      function renderAdminDsoList() {
+        const wrap = document.getElementById("admin-dso-list");
+        const count = document.getElementById("admin-dso-count");
+        if (!wrap) return;
+        if (count) count.textContent = DSO_LIST.length;
+        if (!DSO_LIST.length) {
+          wrap.innerHTML = `<p class="text-center" style="color:#757575;font-size:13px">কোনো DSO নেই।</p>`;
+          return;
+        }
+        wrap.innerHTML = DSO_LIST.map(
+          (d, i) => `
+    <div class="admin-list-item">
+      <span class="item-text">${escapeHtml(d)} <small style="color:#999">(${dsoShort(d)})</small></span>
+      <button class="admin-remove" onclick="adminRemoveDso(${i})">✕</button>
+    </div>
+  `,
+        ).join("");
+      }
+
+      /* ============================================================
+   ADMIN BANK OPERATIONS
+   ============================================================ */
+      let adminBankTab = "nagad";
+
+      function switchAdminBankTab(tab) {
+        adminBankTab = tab;
+        document
+          .getElementById("admin-tab-nagad")
+          .classList.toggle("active", tab === "nagad");
+        document
+          .getElementById("admin-tab-fusion")
+          .classList.toggle("active", tab === "fusion");
+        renderAdminBankList();
+      }
+
+      function adminAddBank() {
+        if (!fbAuth || !fbAuth.currentUser) {
+          showToast("🔒 লগইন করুন");
+          return;
+        }
+        const name = document.getElementById("admin-bank-name").value.trim();
+        const branch = document
+          .getElementById("admin-bank-branch")
+          .value.trim();
+        const account = document
+          .getElementById("admin-bank-account")
+          .value.trim();
+        const title = document.getElementById("admin-bank-title").value.trim();
+
+        if (!name || !branch || !account) {
+          showToast("Bank Name, Branch ও Account Number দিন");
+          return;
+        }
+
+        const entry = {
+          bankName: name,
+          branchName: branch,
+          accountNumber: account,
+          accountsTitle: title || "—",
+        };
+        const path =
+          adminBankTab === "nagad" ? "fusion/nagad" : "fusion/fusion";
+
+        if (!fbReady) {
+          if (adminBankTab === "nagad")
+            NAGAD_BANKS.push({ _id: "local_" + Date.now(), ...entry });
+          else FUSION_BANKS.push({ _id: "local_" + Date.now(), ...entry });
+          clearBankInputs();
+          onDataChanged();
+          showToast("ব্যাংক যোগ হয়েছে (offline)");
+          return;
+        }
+
+        fbDb
+          .ref(path)
+          .push(entry)
+          .then(() => {
+            pushNotification(
+              "নতুন ব্যাংক যোগ",
+              `${adminBankTab === "nagad" ? "নগদ" : "ফিউশন"}: ${name} — ${branch}`,
+              "bank",
+            );
+            clearBankInputs();
+            showToast("ব্যাংক যোগ হয়েছে ✓");
+          })
+          .catch((err) => showToast("ব্যর্থ: " + err.message));
+      }
+
+      function clearBankInputs() {
+        document.getElementById("admin-bank-name").value = "";
+        document.getElementById("admin-bank-branch").value = "";
+        document.getElementById("admin-bank-account").value = "";
+        document.getElementById("admin-bank-title").value = "";
+      }
+
+      function adminRemoveBank(idx) {
+        if (!fbAuth || !fbAuth.currentUser) {
+          showToast("🔒 লগইন করুন");
+          return;
+        }
+        const source = adminBankTab === "nagad" ? NAGAD_BANKS : FUSION_BANKS;
+        const bank = source[idx];
+        if (!bank) return;
+
+        if (!fbReady || !bank._id) {
+          source.splice(idx, 1);
+          onDataChanged();
+          showToast("ব্যাংক মুছে ফেলা হয়েছে");
+          return;
+        }
+        const path =
+          adminBankTab === "nagad" ? "fusion/nagad/" : "fusion/fusion/";
+        fbDb
+          .ref(path + bank._id)
+          .remove()
+          .then(() => {
+            pushNotification(
+              "ব্যাংক মুছে ফেলা হয়েছে",
+              `${bank.bankName}`,
+              "bank",
+            );
+            showToast("ব্যাংক মুছে ফেলা হয়েছে");
+          })
+          .catch((err) => showToast("ব্যর্থ: " + err.message));
+      }
+
+      function renderAdminBankList() {
+        const wrap = document.getElementById("admin-bank-list");
+        const count = document.getElementById("admin-bank-count");
+        if (!wrap) return;
+        const source = adminBankTab === "nagad" ? NAGAD_BANKS : FUSION_BANKS;
+        if (count) count.textContent = source.length;
+        if (!source.length) {
+          wrap.innerHTML = `<p class="text-center" style="color:#757575;font-size:13px">কোনো ব্যাংক নেই।</p>`;
+          return;
+        }
+        wrap.innerHTML = source
+          .map(
+            (b, i) => `
+    <div class="admin-list-item">
+      <span class="item-text"><b>${escapeHtml(b.bankName)}</b><br><small>${escapeHtml(b.accountNumber)}</small></span>
+      <button class="admin-remove" onclick="adminRemoveBank(${i})">✕</button>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      function reloadFromFirebase() {
+        if (!fbReady) {
+          showToast("Firebase কানেক্টেড নেই");
+          return;
+        }
+        showToast("Firebase থেকে রিলোড হচ্ছে...");
+        onDataChanged();
+      }
+
+      /* ============================================================
+   NAVIGATION (main app)
+   ============================================================ */
+      function toggleDrawer() {
+        document.getElementById("drawer").classList.toggle("open");
+        document.getElementById("drawerOverlay").classList.toggle("open");
+      }
+      function closeDrawer() {
+        document.getElementById("drawer").classList.remove("open");
+        document.getElementById("drawerOverlay").classList.remove("open");
+      }
+      function navigate(screen) {
+        document
+          .querySelectorAll("#mainApp .screen")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById("screen-" + screen).classList.add("active");
+        document
+          .querySelectorAll("#drawer .drawer-item")
+          .forEach((i) =>
+            i.classList.toggle("active", i.dataset.screen === screen),
+          );
+        const titles = {
+          home: "Home",
+          denote: "Denote",
+          mention: "Mention",
+          bank: "Bank List",
+          notifications: "Notifications",
+          about: "About",
+        };
+        document.getElementById("appbarTitle").textContent =
+          titles[screen] || screen;
+        document.getElementById("mainApp").scrollTop = 0;
+        closeDrawer();
+        if (screen === "home") refreshDsoDropdown();
+        if (screen === "mention") renderMention();
+        if (screen === "bank") renderBanks();
+        if (screen === "notifications") {
+          renderNotifications();
+          updateNotifBadge();
+        }
+      }
+
+      /* ============================================================
+   TOAST / MODAL
+   ============================================================ */
+      let toastTimer;
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove("show"), 3000);
+      }
+      function showModal({ title, body, actions }) {
+        document.getElementById("modalTitle").textContent = title;
+        document.getElementById("modalBody").textContent = body || "";
+        const wrap = document.getElementById("modalActions");
+        wrap.innerHTML = "";
+        actions.forEach((a) => {
+          const btn = document.createElement("button");
+          btn.className = "btn " + (a.primary ? "btn-primary" : "btn-outline");
+          btn.textContent = a.label;
+          btn.onclick = () => {
+            closeModal();
+            a.onClick && a.onClick();
+          };
+          wrap.appendChild(btn);
+        });
+        document.getElementById("modalOverlay").classList.add("open");
+      }
+      function closeModal() {
+        document.getElementById("modalOverlay").classList.remove("open");
+      }
+
+      /* ============================================================
+   WHATSAPP
+   ============================================================ */
+      function sendWhatsApp(message) {
+        const url = "whatsapp://send?text=" + encodeURIComponent(message);
+        const fallback = "https://wa.me/?text=" + encodeURIComponent(message);
+        const win = window.open(url, "_blank");
+        if (!win) window.location.href = fallback;
+      }
+
+      /* ============================================================
+   HOME SCREEN
+   ============================================================ */
+      const HOME_FIELDS = [
+        { name: "lifting", label: "Lifting" },
+        { name: "cashLifting", label: "Cash Lifting" },
+        { name: "bank", label: "Bank" },
+        { name: "crm", label: "CRM" },
+        { name: "cash", label: "Cash" },
+        { name: "preDue", label: "Pre Due" },
+        { name: "cashSupport", label: "Cash Support" },
+        { name: "returnVal", label: "Return" },
+      ];
+
+      function initHome() {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, "0");
+        const dd = String(today.getDate()).padStart(2, "0");
+        document.getElementById("home-date").value = `${yyyy}-${mm}-${dd}`;
+
+        const grid = document.getElementById("home-inputs");
+        grid.innerHTML = "";
+        HOME_FIELDS.forEach((f) => {
+          const wrap = document.createElement("div");
+          wrap.className = "field";
+          wrap.innerHTML = `
+      <input type="number" inputmode="numeric" id="hf-${f.name}" placeholder=" " />
+      <label for="hf-${f.name}">${f.label}</label>
+    `;
+          grid.appendChild(wrap);
+          wrap
+            .querySelector("input")
+            .addEventListener("input", updateHomeTotal);
+        });
+        refreshDsoDropdown();
+        updateHomeTotal();
+      }
+
+      function refreshDsoDropdown() {
+        const dsoSel = document.getElementById("home-dso");
+        if (!dsoSel) return;
+        const current = dsoSel.value;
+        dsoSel.innerHTML =
+          '<option value="" disabled selected hidden></option>';
+        DSO_LIST.forEach((num) => {
+          const opt = document.createElement("option");
+          opt.value = num;
+          opt.textContent = num;
+          dsoSel.appendChild(opt);
+        });
+        if (DSO_LIST.includes(current)) dsoSel.value = current;
+      }
+
+      function getHomeInputs() {
+        const o = {};
+        HOME_FIELDS.forEach(
+          (f) => (o[f.name] = document.getElementById("hf-" + f.name).value),
+        );
+        o.note = document.getElementById("home-note").value;
+        o.date = document.getElementById("home-date").value;
+        o.dso = document.getElementById("home-dso").value;
+        return o;
+      }
+
+      function homeTotal() {
+        const i = getHomeInputs();
+        const s1 = (+i.lifting || 0) + (+i.cashLifting || 0) + (+i.preDue || 0);
+        const s2 =
+          (+i.cash || 0) +
+          (+i.cashSupport || 0) +
+          (+i.returnVal || 0) +
+          (+i.crm || 0) +
+          (+i.bank || 0);
+        return s1 - s2;
+      }
+
+      function updateHomeTotal() {
+        const total = homeTotal();
+        const box = document.getElementById("home-result");
+        box.classList.remove("due", "adv", "ok");
+        if (total > 0) {
+          box.textContent = "Due " + Math.abs(total);
+          box.classList.add("due");
+        } else if (total < 0) {
+          box.textContent = "Advance " + Math.abs(total);
+          box.classList.add("adv");
+        } else {
+          box.textContent = "😊";
+          box.classList.add("ok");
+        }
+      }
+
+      function homeSubmit() {
+        const i = getHomeInputs();
+        const missing = HOME_FIELDS.filter((f) => !String(i[f.name]).trim());
+        if (missing.length || !i.date || !i.dso) {
+          showToast("😊 সব ফিল্ড পূরণ করুন।");
+          return;
+        }
+        if (+i.cashSupport > 0 && !i.note.trim()) {
+          showToast("😊 Cash Support গ্রহীতার নাম Note এ লিখুন।");
+          return;
+        }
+
+        const total = homeTotal();
+        const [yyyy, mm, dd] = i.date.split("-");
+        const displayDate = `${dd}-${mm}-${yyyy}`;
+
+        const msg =
+          `Date:- *${displayDate}*\n` +
+          `DSO:- *${i.dso}*\n` +
+          `Lifting:- *${i.lifting}*\n` +
+          `Cash Lifting:- *${i.cashLifting}*\n` +
+          `Total Lifting:- *${(+i.lifting || 0) + (+i.cashLifting || 0)}*\n` +
+          `Bank:- *${i.bank}*\n` +
+          `CRM:- *${i.crm}*\n` +
+          `Pre_Due:- *${i.preDue}*\n` +
+          `Cash Support:- *${i.cashSupport}*\n` +
+          `Cash:- *${i.cash}*\n` +
+          `Return:- *${i.returnVal}*\n` +
+          `${total === 0 ? "😊" : total > 50 ? "Due" : "Adv"}:*${Math.abs(total)}*\n` +
+          `NB:- *${i.note}*`;
+
+        let title = "ধন্যবাদ",
+          body = "আপনার কোন ডিউ/এডভান্স নেই😊";
+        if (total > 0) {
+          title = "টাকা কম আছে!!";
+          body = `আপনার ${total} টাকা কম আছে।`;
+        } else if (total < 0) {
+          title = "টাকা বেশি আছে!!";
+          body = `আপনার ${Math.abs(total)} টাকা বেশি আছে।`;
+        }
+
+        showModal({
+          title,
+          body,
+          actions: [
+            { label: "পাঠাবো না❌", onClick: () => {} },
+            {
+              label: "পাঠাবো✅",
+              primary: true,
+              onClick: () => sendWhatsApp(msg),
+            },
+          ],
+        });
+      }
+
+      /* ============================================================
+   DENOTE SCREEN
+   ============================================================ */
+      const DENOMS = [
+        { value: 1000, color: "#5d4037" },
+        { value: 500, color: "#7b1fa2" },
+        { value: 200, color: "#388e3c" },
+        { value: 100, color: "#1976d2" },
+        { value: 50, color: "#f57c00" },
+        { value: 20, color: "#d32f2f" },
+        { value: 10, color: "#00838f" },
+      ];
+
+      function initDenote() {
+        const wrap = document.getElementById("denote-rows");
+        wrap.innerHTML = "";
+        DENOMS.forEach((d) => {
+          const row = document.createElement("div");
+          row.className = "denom-row";
+          row.innerHTML = `
+      <div class="note-card" style="background:${d.color};color:#fff">৳${d.value}</div>
+      <input type="number" inputmode="numeric" min="0" placeholder="0" data-denom="${d.value}" />
+      <div class="denom-subtotal" id="dsub-${d.value}">0</div>
+    `;
+          wrap.appendChild(row);
+          row.querySelector("input").addEventListener("input", denoteUpdate);
+        });
+        denoteUpdate();
+      }
+      function denoteUpdate() {
+        let total = 0;
+        DENOMS.forEach((d) => {
+          const input = document.querySelector(
+            `#denote-rows input[data-denom="${d.value}"]`,
+          );
+          const qty = +input.value || 0;
+          const sub = qty * d.value;
+          document.getElementById("dsub-" + d.value).textContent =
+            sub.toLocaleString("en-IN");
+          total += sub;
+        });
+        document.getElementById("denote-total").textContent =
+          total.toLocaleString("en-IN");
+      }
+      function denoteReset() {
+        document
+          .querySelectorAll("#denote-rows input")
+          .forEach((inp) => (inp.value = ""));
+        denoteUpdate();
+        showToast("Reset done");
+      }
+
+      /* ============================================================
+   MENTION SCREEN
+   ============================================================ */
+      let mentionRows = [{ id: 1, dso: "", amount: "" }];
+      let mentionNextId = 2;
+      let mentionImageData = null;
+
+      function dsoShort(dso) {
+        return "DSO-" + String(dso).slice(-3);
+      }
+
+      function initMention() {
+        mentionRows = [{ id: mentionNextId++, dso: "", amount: "" }];
+        renderMention();
+      }
+
+      function renderMention() {
+        const wrap = document.getElementById("mention-rows");
+        if (!wrap) return;
+        wrap.innerHTML = "";
+        if (DSO_LIST.length === 0) {
+          wrap.innerHTML = `<p class="text-center" style="color:#757575;padding:20px">DSO লিস্ট খালি।</p>`;
+          document.getElementById("mention-total").textContent = "0";
+          return;
+        }
+        mentionRows.forEach((r, idx) => {
+          const row = document.createElement("div");
+          row.className = "mention-row";
+
+          const selWrap = document.createElement("div");
+          selWrap.className = "field";
+          selWrap.style.marginBottom = "0";
+          const sel = document.createElement("select");
+          sel.innerHTML =
+            `<option value="" disabled selected hidden></option>` +
+            DSO_LIST.map(
+              (s) => `<option value="${s}">${dsoShort(s)}</option>`,
+            ).join("");
+          sel.value = r.dso || "";
+          sel.onchange = () => {
+            r.dso = sel.value;
+          };
+          selWrap.appendChild(sel);
+          const lbl = document.createElement("label");
+          lbl.textContent = "DSO";
+          selWrap.appendChild(lbl);
+
+          const inpWrap = document.createElement("div");
+          inpWrap.className = "field";
+          inpWrap.style.marginBottom = "0";
+          const inp = document.createElement("input");
+          inp.type = "number";
+          inp.inputMode = "numeric";
+          inp.placeholder = " ";
+          inp.value = r.amount;
+          inp.oninput = () => {
+            r.amount = inp.value;
+            updateMentionTotal();
+          };
+          inpWrap.appendChild(inp);
+          const lbl2 = document.createElement("label");
+          lbl2.textContent = "Amount";
+          inpWrap.appendChild(lbl2);
+
+          const delBtn = document.createElement("button");
+          delBtn.className = "delete-btn";
+          delBtn.innerHTML = "✕";
+          delBtn.onclick = () => mentionRemove(idx);
+
+          row.appendChild(selWrap);
+          row.appendChild(inpWrap);
+          row.appendChild(delBtn);
+          wrap.appendChild(row);
+        });
+        updateMentionTotal();
+      }
+      function mentionRemove(idx) {
+        if (mentionRows.length <= 1) {
+          showToast("কমপক্ষে একটি row থাকতে হবে");
+          return;
+        }
+        mentionRows.splice(idx, 1);
+        renderMention();
+      }
+      function updateMentionTotal() {
+        const total = mentionRows.reduce((s, r) => s + (+r.amount || 0), 0);
+        document.getElementById("mention-total").textContent =
+          total.toLocaleString("en-IN");
+      }
+      function mentionAdd() {
+        if (DSO_LIST.length === 0) {
+          showToast("প্রথমে Admin থেকে DSO যোগ করুন");
+          return;
+        }
+        mentionRows.push({ id: mentionNextId++, dso: "", amount: "" });
+        renderMention();
+      }
+      function mentionReset() {
+        mentionRows = [{ id: mentionNextId++, dso: "", amount: "" }];
+        renderMention();
+        mentionImageRemove();
+      }
+      function mentionImageSelected(ev) {
+        const file = ev.target.files && ev.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          showToast("শুধু ছবি সাপোর্টেড");
+          ev.target.value = "";
+          return;
+        }
+        if (file.size > 4 * 1024 * 1024) {
+          showToast("ছবির সাইজ ৪ MB এর কম হতে হবে");
+          ev.target.value = "";
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          mentionImageData = e.target.result;
+          document.getElementById("mention-img-preview").src = mentionImageData;
+          document
+            .getElementById("mention-img-preview-wrap")
+            .classList.add("show");
+        };
+        reader.readAsDataURL(file);
+        ev.target.value = "";
+      }
+      function mentionImageRemove() {
+        mentionImageData = null;
+        const w = document.getElementById("mention-img-preview-wrap");
+        if (w) w.classList.remove("show");
+        const i = document.getElementById("mention-img-preview");
+        if (i) i.src = "";
+      }
+      function mentionSend() {
+        const hasBlank = mentionRows.some((r) => !r.dso || !r.amount);
+        if (hasBlank) {
+          showToast("Input Error: Select DSO & Enter Amount!");
+          return;
+        }
+        const lines = mentionRows.map(
+          (r) =>
+            `_${dsoShort(r.dso)}: *${(+r.amount).toLocaleString("en-IN")}*৳_`,
+        );
+        const total = mentionRows.reduce((s, r) => s + (+r.amount || 0), 0);
+        const msg =
+          lines.join("\n") + `\n\n*Total: ${total.toLocaleString("en-IN")}*৳`;
+        if (mentionImageData) shareWithImage(msg, mentionImageData);
+        else sendWhatsApp(msg);
+      }
+      function shareWithImage(text, dataUrl) {
+        try {
+          const [meta, b64] = dataUrl.split(",");
+          const mime = (meta.match(/data:(.*?);/) || [, "image/jpeg"])[1];
+          const bin = atob(b64);
+          const arr = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+          const blob = new Blob([arr], { type: mime });
+          const file = new File([blob], "mention.png", { type: mime });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator
+              .share({ text, files: [file] })
+              .catch(() => sendWhatsApp(text));
+          } else {
+            showToast(
+              "এই ব্রাউজারে ছবি শেয়ার সাপোর্টেড নয়। শুধু টেক্সট যাবে।",
+            );
+            sendWhatsApp(text);
+          }
+        } catch (e) {
+          sendWhatsApp(text);
+        }
+      }
+
+      /* ============================================================
+   BANK LIST SCREEN
+   ============================================================ */
+      let bankTab = "nagad";
+      function switchBankTab(tab) {
+        bankTab = tab;
+        document
+          .getElementById("tab-nagad")
+          .classList.toggle("active", tab === "nagad");
+        document
+          .getElementById("tab-fusion")
+          .classList.toggle("active", tab === "fusion");
+        document.getElementById("bank-search").value = "";
+        renderBanks();
+      }
+      function renderBanks() {
+        const wrap = document.getElementById("bank-list");
+        if (!wrap) return;
+        const q = (document.getElementById("bank-search").value || "")
+          .toLowerCase()
+          .trim();
+        const source = bankTab === "nagad" ? NAGAD_BANKS : FUSION_BANKS;
+        const filtered = q
+          ? source.filter(
+              (b) =>
+                (b.bankName || "").toLowerCase().includes(q) ||
+                (b.branchName || "").toLowerCase().includes(q) ||
+                (b.accountNumber || "").toLowerCase().includes(q),
+            )
+          : source;
+        if (!filtered.length) {
+          wrap.innerHTML = `<p class="text-center" style="color:#757575;padding:20px">${
+            source.length === 0
+              ? "এই তালিকা খালি। Admin থেকে ব্যাংক যোগ করুন।"
+              : "No bank found."
+          }</p>`;
+          return;
+        }
+        wrap.innerHTML = filtered
+          .map(
+            (b) => `
+    <div class="bank-item">
+      <div class="bank-name">${escapeHtml(b.bankName)}</div>
+      <div class="bank-branch">${escapeHtml(b.branchName)}</div>
+      <div class="bank-detail"><b>Account Number:</b> ${escapeHtml(b.accountNumber)}</div>
+      <div class="bank-detail"><b>Accounts Title:</b> ${escapeHtml(b.accountsTitle)}</div>
+    </div>
+  `,
+          )
+          .join("");
+      }
+      function escapeHtml(s) {
+        return String(s || "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+
+      /* ============================================================
+   LOADING
+   ============================================================ */
+      function hideLoading() {
+        const el = document.getElementById("loadingOverlay");
+        el.classList.add("hide");
+        setTimeout(() => {
+          el.style.display = "none";
+        }, 400);
+      }
+
+      /* ============================================================
+   HIDDEN ADMIN ENTRY — 5 taps on "Fusion"
+   ============================================================ */
+      let titleTapCount = 0,
+        titleTapTimer = null;
+      function initHiddenAdminEntry() {
+        const header = document.querySelector("#drawer .drawer-header h2");
+        if (!header) return;
+        header.style.cursor = "pointer";
+        header.addEventListener("click", () => {
+          titleTapCount++;
+          clearTimeout(titleTapTimer);
+          titleTapTimer = setTimeout(() => {
+            titleTapCount = 0;
+          }, 1500);
+          if (titleTapCount >= 5) {
+            titleTapCount = 0;
+            closeDrawer();
+            if (fbAuth && fbAuth.currentUser) showAdminApp();
+            else openAdminLogin();
+          }
+        });
+      }
+
+      /* ============================================================
+   INIT
+   ============================================================ */
+      document.addEventListener("DOMContentLoaded", () => {
+        initFirebase();
+        setupPWA();
+
+        initHome();
+        initDenote();
+        initMention();
+        renderBanks();
+        renderNotifications();
+        initHiddenAdminEntry();
+
+        // Firebase auth state listener
+        if (fbReady && fbAuth) {
+          fbAuth.onAuthStateChanged((user) => {
+            if (user) {
+              document.getElementById("settings-auth-status").textContent =
+                "🟢 Logged in";
+              document.getElementById("settings-email").textContent =
+                user.email;
+            } else {
+              document.getElementById("settings-auth-status").textContent =
+                "🟡 Not logged in";
+              document.getElementById("settings-email").textContent = "—";
+            }
+          });
+        }
+
+        if (fbReady) {
+          startFirebaseSync();
+          const hideTimer = setTimeout(hideLoading, 3000);
+          const checkReady = setInterval(() => {
+            if (
+              DSO_LIST.length > 0 ||
+              NAGAD_BANKS.length > 0 ||
+              FUSION_BANKS.length > 0
+            ) {
+              clearTimeout(hideTimer);
+              clearInterval(checkReady);
+              hideLoading();
+            }
+          }, 200);
+          setTimeout(() => {
+            clearInterval(checkReady);
+            hideLoading();
+          }, 3500);
+        } else {
+          hideLoading();
+        }
+
+        document
+          .getElementById("admin-password")
+          .addEventListener("keydown", (e) => {
+            if (e.key === "Enter") adminLogin();
+          });
+
+        window.addEventListener("beforeunload", stopFirebaseSync);
+      });
+    </script>
+  </body>
+</html>
